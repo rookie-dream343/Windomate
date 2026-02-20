@@ -1,0 +1,14 @@
+{
+  "playwright_disabled": {
+    "command": "./node/node.exe",
+    "args": [
+      "./mcp/node_modules/@playwright/mcp/cli.js"
+    ]
+  },
+  "random-acg-pic": {
+    "command": "D:\\deskmate\\deskmate\\my-neuro-main\\live-2d\\node\\node.exe",
+    "args": [
+      "./mcp/tools/random-acg-pic.js"
+    ]
+  }
+}
