@@ -84,9 +84,34 @@ vad_state = {
     "result_queue": Queue()
 }
 
-# 设置设备和数据类型
-device = "cuda" if torch.cuda.is_available() else "cpu"
+# 🔧 强制使用CPU避免CUDA错误（如果CUDA有问题）
+# 检查CUDA是否真正可用（不仅仅是检测到）
+try:
+    if torch.cuda.is_available():
+        # 尝试简单的CUDA操作来验证
+        test_tensor = torch.zeros(1).cuda()
+        del test_tensor
+        torch.cuda.empty_cache()
+        device = "cuda"
+        print(f"✓ CUDA可用，使用设备: {device}")
+    else:
+        device = "cpu"
+        print(f"⚠ CUDA不可用，使用CPU")
+except Exception as e:
+    device = "cpu"
+    print(f"✗ CUDA检测失败 ({e})，强制使用CPU")
+
 torch.set_default_dtype(torch.float32)
+
+# 清理CUDA缓存，避免显存碎片导致的unknown error
+if device == "cuda":
+    try:
+        torch.cuda.empty_cache()
+        torch.cuda.ipc_collect()
+        torch.cuda.set_per_process_memory_fraction(0.8)  # 限制显存使用，留20%余量
+    except:
+        device = "cpu"
+        print(f"✗ CUDA初始化失败，切换到CPU")
 
 # 初始化模型状态
 model_state = {
@@ -111,6 +136,7 @@ def download_vad_models():
 # 使用 FastAPI 的生命周期事件装饰器
 @app.on_event("startup")
 async def startup_event():
+    global device  # 声明使用全局变量
     print("正在加载模型...")
 
     # 检查VAD模型目录是否存在
@@ -159,21 +185,35 @@ async def startup_event():
     os.environ['FUNASR_HOME'] = MODEL_DIR
 
     # 加载ASR模型
-    print("正在加载ASR模型...")
-    model_state["asr_model"] = AutoModel(
-        model="iic/speech_paraformer-large-vad-punc_asr_nat-zh-cn-16k-common-vocab8404-pytorch",
-        device=device,
-        model_type="pytorch",
-        dtype="float32"
-    )
-    print("ASR模型加载完成")
+    print(f"正在加载ASR模型 (使用设备: {device})...")
+    try:
+        model_state["asr_model"] = AutoModel(
+            model="iic/speech_paraformer-large-vad-punc_asr_nat-zh-cn-16k-common-vocab8404-pytorch",
+            device=device,
+            model_type="pytorch",
+            dtype="float32"
+        )
+        print("ASR模型加载完成")
+    except Exception as e:
+        if device == "cuda":
+            print(f"CUDA模式加载失败: {e}，尝试切换到CPU...")
+            device = "cpu"
+            model_state["asr_model"] = AutoModel(
+                model="iic/speech_paraformer-large-vad-punc_asr_nat-zh-cn-16k-common-vocab8404-pytorch",
+                device=device,
+                model_type="pytorch",
+                dtype="float32"
+            )
+            print("ASR模型加载完成 (CPU模式)")
+        else:
+            raise e
 
-    # 加载标点符号模型
+    # 加载标点符号模型（强制使用CPU，避免CUDA兼容性问题）
     print("正在加载标点符号模型...")
     model_state["punc_model"] = AutoModel(
         model="iic/punc_ct-transformer_cn-en-common-vocab471067-large",
         model_revision="v2.0.4",
-        device=device,
+        device="cpu",  # 标点模型用CPU，避免CUDA错误
         model_type="pytorch",
         dtype="float32"
     )
@@ -258,10 +298,19 @@ async def upload_audio(file: UploadFile = File(...)):
         # 进行ASR处理 - 直接传入音频数组
         with torch.no_grad():
             # 语音识别 - 传入 numpy 数组而不是文件路径
-            asr_result = model_state["asr_model"].generate(
-                input=audio_data,  # 直接传入音频数组！
-                dtype="float32"
-            )
+            try:
+                asr_result = model_state["asr_model"].generate(
+                    input=audio_data,  # 直接传入音频数组！
+                    dtype="float32"
+                )
+            except RuntimeError as e:
+                if "CUDA" in str(e) or "cuda" in str(e):
+                    print(f"CUDA推理错误: {e}，这可能表示GPU有问题")
+                    return {
+                        "status": "error",
+                        "message": f"CUDA错误: {str(e)}。建议重启ASR服务或使用CPU模式"
+                    }
+                raise
 
             # 添加标点符号
             if asr_result and len(asr_result) > 0:

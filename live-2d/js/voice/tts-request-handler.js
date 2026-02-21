@@ -96,6 +96,9 @@ class TTSRequestHandler {
         const requestInfo = { id: requestId, controller };
         this.activeRequests.add(requestInfo);
 
+        // 🔥 添加超时控制 - 15秒后自动取消
+        const timeoutId = setTimeout(() => controller.abort(), 15000);
+
         try {
             // 清理文本
             const textForTTS = text
@@ -163,10 +166,14 @@ class TTSRequestHandler {
                 return await response.blob();
             }
         } catch (error) {
-            if (error.name === 'AbortError') return null;
+            if (error.name === 'AbortError') {
+                console.warn('TTS请求超时或被取消');
+                return null;
+            }
             console.error('TTS转换错误:', error);
             return null;
         } finally {
+            clearTimeout(timeoutId);
             this.activeRequests.delete(requestInfo);
         }
     }
@@ -220,6 +227,16 @@ class TTSRequestHandler {
             const audioChunks = [];
             let settled = false;
 
+            // 🔥 添加整体超时控制（30秒）
+            const timeoutId = setTimeout(() => {
+                if (!settled) {
+                    settled = true;
+                    ws.close();
+                    console.warn('阿里云TTS WebSocket超时');
+                    resolve(null);
+                }
+            }, 30000);
+
             const ws = new WebSocket('wss://dashscope.aliyuncs.com/api-ws/v1/inference/', {
                 headers: { 'Authorization': `bearer ${this.aliyunApiKey}` }
             });
@@ -238,6 +255,7 @@ class TTSRequestHandler {
             }
 
             const cleanup = () => {
+                clearTimeout(timeoutId);
                 if (abortSignal) abortSignal.removeEventListener('abort', onAbort);
             };
 

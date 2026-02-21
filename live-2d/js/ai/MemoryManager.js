@@ -36,6 +36,9 @@ class MemoryManager {
             return null;
         }
         try {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 5000); // 5秒超时
+
             const headers = {
                 'Content-Type': 'application/json'
             };
@@ -50,8 +53,11 @@ class MemoryManager {
                 headers: headers,
                 body: JSON.stringify({
                     text: text
-                })
+                }),
+                signal: controller.signal
             });
+
+            clearTimeout(timeoutId);
 
             if (!response.ok) {
                 await this.handleBertError(response);
@@ -62,7 +68,11 @@ class MemoryManager {
             console.log('BERT分类结果:', data);
             return data;
         } catch (error) {
-            logToTerminal('error', `BERT分类错误: ${error.message}`);
+            if (error.name === 'AbortError') {
+                logToTerminal('warn', `BERT服务超时: 可能服务未启动 (${this.bertUrl})`);
+            } else {
+                logToTerminal('warn', `BERT分类错误: ${error.message}`);
+            }
             console.error('BERT分类错误:', error);
             return null;
         }

@@ -24,7 +24,8 @@ class VoiceChatFacade {
 
         // LLM配置（暴露给外部使用）
         this.API_KEY = config.llm.api_key;
-        this.API_URL = config.llm.api_url;
+        // 🔧 移除尾部斜杠，避免URL拼接问题
+        this.API_URL = config.llm.api_url.replace(/\/+$/, '');
         this.MODEL = config.llm.model;
 
         // ASR相关属性（暴露给外部使用）

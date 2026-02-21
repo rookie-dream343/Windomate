@@ -23,6 +23,8 @@ class EnhancedTextProcessor {
 
         // TTS不可用标记：第一次失败后跳过后续所有TTS请求
         this.ttsUnavailable = false;
+        this.ttsRetryCount = 0;
+        this.maxTtsRetries = 3;  // 最多重试3次后标记为不可用
 
         // 回退字幕状态
         this.fallbackDisplayText = '';
@@ -76,18 +78,27 @@ class EnhancedTextProcessor {
                     const audioData = await this.requestHandler.convertTextToSpeech(segment);
                     if (audioData) {
                         this.audioDataQueue.push({ audio: audioData, text: segment });
+                        this.ttsRetryCount = 0;  // 成功后重置重试计数
+                        this.ttsUnavailable = false;  // 成功后恢复可用状态
                     } else if (this.shouldStop) {
                         // 被主动打断（abort），不标记为不可用
                         return;
                     } else {
-                        // 首次TTS失败，标记不可用，后续全部跳过
-                        this.ttsUnavailable = true;
-                        console.log('TTS服务不可用，切换为字幕回退模式');
+                        this.ttsRetryCount++;
+                        if (this.ttsRetryCount >= this.maxTtsRetries) {
+                            // 达到最大重试次数，标记为不可用
+                            this.ttsUnavailable = true;
+                            console.log(`TTS服务连续失败 ${this.maxTtsRetries} 次，切换为字幕回退模式`);
+                        }
                         this.appendFallbackText(segment);
                     }
                 } catch (error) {
                     console.error('TTS处理错误:', error);
-                    // 单个片段失败不标记整体不可用，只回退当前片段
+                    this.ttsRetryCount++;
+                    if (this.ttsRetryCount >= this.maxTtsRetries) {
+                        this.ttsUnavailable = true;
+                        console.log(`TTS服务连续失败 ${this.maxTtsRetries} 次，切换为字幕回退模式`);
+                    }
                     this.appendFallbackText(segment);
                 }
 

@@ -8,9 +8,11 @@ const { logToTerminal, handleAPIError } = require('../api-utils.js');
 class LLMClient {
     constructor(config) {
         this.apiKey = config.llm.api_key;
-        this.apiUrl = config.llm.api_url;
+        // 🔧 移除尾部斜杠，避免双斜杠问题
+        this.apiUrl = config.llm.api_url.replace(/\/+$/, '');
         this.model = config.llm.model;
         this.temperature = config.llm.temperature || 1.0;  // 🔥 读取temperature配置，默认1.0
+        console.log(`[LLMClient] API URL: ${this.apiUrl}, Model: ${this.model}`);
     }
 
     /**
@@ -68,14 +70,20 @@ class LLMClient {
         }
 
         try {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 30000); // 30秒超时
+
             const response = await fetch(`${this.apiUrl}/chat/completions`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${this.apiKey}`
                 },
-                body: JSON.stringify(requestBody)
+                body: JSON.stringify(requestBody),
+                signal: controller.signal
             });
+
+            clearTimeout(timeoutId);
 
             if (!response.ok) {
                 await handleAPIError(response);
@@ -117,7 +125,16 @@ class LLMClient {
             return message;
 
         } catch (error) {
-            logToTerminal('error', `LLM API调用失败: ${error.message}`);
+            if (error.name === 'AbortError') {
+                logToTerminal('error', `LLM API调用超时 (30秒): 请检查网络连接`);
+            } else {
+                logToTerminal('error', `LLM API调用失败: ${error.message}`);
+                console.error('[LLMClient] 请求详情:', {
+                    url: `${this.apiUrl}/chat/completions`,
+                    model: this.model,
+                    error: error
+                });
+            }
             throw error;
         }
     }
