@@ -281,6 +281,17 @@ class VoiceChatFacade {
 
     // ========== MemOS 记忆系统方法 ==========
     /**
+     * 播放即时反馈（不占用主TTS队列，用于"让我看看"之类的场景）
+     * @param {string} text - 反馈文本
+     * @returns {Promise<void>}
+     */
+    async playImmediateFeedback(text) {
+        if (this.ttsProcessor && typeof this.ttsProcessor.playImmediateFeedback === 'function') {
+            await this.ttsProcessor.playImmediateFeedback(text);
+        }
+    }
+
+    /**
      * 注入相关记忆到系统提示词
      * @param {string} userInput - 用户输入
      * @returns {Promise<boolean>} - 是否成功注入

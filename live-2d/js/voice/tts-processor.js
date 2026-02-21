@@ -308,6 +308,49 @@ class EnhancedTextProcessor {
         }, 300);
     }
 
+    // 🔥 播放即时反馈（不占用主TTS队列，用于"让我看看"之类的场景）
+    async playImmediateFeedback(text) {
+        if (!text || !text.trim()) return;
+
+        // 显示字幕
+        const aiName = this.config.subtitle_labels?.ai || 'Haruro';
+        if (typeof showSubtitle === 'function') {
+            showSubtitle(`${aiName}: ${text}`);
+        }
+
+        // 如果TTS不可用，只显示字幕
+        if (this.ttsUnavailable) {
+            // 2秒后隐藏字幕
+            setTimeout(() => {
+                if (typeof hideSubtitle === 'function') hideSubtitle();
+            }, 2000);
+            return;
+        }
+
+        try {
+            // 获取音频数据
+            const audioData = await this.requestHandler.convertTextToSpeech(text);
+            if (audioData) {
+                // 直接播放，不经过队列
+                await this.playbackEngine.playAudio(audioData, text);
+                // 播放完成后延迟隐藏字幕
+                setTimeout(() => {
+                    if (typeof hideSubtitle === 'function') hideSubtitle();
+                }, 1000);
+            } else {
+                // TTS失败，2秒后隐藏字幕
+                setTimeout(() => {
+                    if (typeof hideSubtitle === 'function') hideSubtitle();
+                }, 2000);
+            }
+        } catch (error) {
+            console.error('即时反馈播放失败:', error);
+            setTimeout(() => {
+                if (typeof hideSubtitle === 'function') hideSubtitle();
+            }, 2000);
+        }
+    }
+
     // 停止
     stop() {
         this.shouldStop = true;

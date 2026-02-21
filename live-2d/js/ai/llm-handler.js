@@ -101,20 +101,21 @@ class LLMHandler {
                             console.log("需要截图");
                             logToTerminal('info', "需要截图");
 
-                            // 🔥 立即显示反馈消息，让用户知道正在处理视觉内容
-                            const aiName = config.subtitle_labels?.ai || 'Haruro';
+                            // 🔥 立即播放语音反馈，让用户知道正在处理视觉内容
                             const thinkingMessages = [
-                                "让我看看...",
-                                 "我看看屏幕~",
-                                 "正在看...",
-                                 "等我看一下哦",
-                                 "让我仔细看看",
-                                 "我看看这是什么"
+                                "让我看看",
+                                "我看看屏幕",
+                                "正在看",
+                                "等我看一下哦",
+                                "让我仔细看看",
+                                "我看看这是什么"
                             ];
                             const randomMessage = thinkingMessages[Math.floor(Math.random() * thinkingMessages.length)];
-                            if (typeof showSubtitle === 'function') {
-                                showSubtitle(`${aiName}: ${randomMessage}`);
-                            }
+
+                            // 异步播放即时反馈（不等待完成，避免阻塞）
+                            voiceChat.playImmediateFeedback(randomMessage).catch(err => {
+                                console.warn('即时反馈播放失败:', err);
+                            });
 
                             screenshotBase64 = await voiceChat.takeScreenshotBase64();
                         } catch (error) {
