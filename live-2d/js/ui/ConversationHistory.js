@@ -46,26 +46,44 @@ class ConversationHistory {
         this.messagesContainer = document.getElementById('history-messages');
         this.clearBtn = document.getElementById('history-clear-btn');
 
+        console.log('[ConversationHistory] DOM 查找结果:', {
+            container: !!this.container,
+            contentBox: !!this.contentBox,
+            toggleBtn: !!this.toggleBtn,
+            messagesContainer: !!this.messagesContainer,
+            clearBtn: !!this.clearBtn
+        });
+
         if (!this.container || !this.toggleBtn) {
-            console.warn('对话历史 DOM 元素未找到');
+            console.error('[ConversationHistory] 关键 DOM 元素未找到');
             return;
         }
 
         // 绑定切换按钮事件
-        this.toggleBtn.addEventListener('click', () => this.toggle());
+        this.toggleBtn.addEventListener('click', (e) => {
+            console.log('[ConversationHistory] 按钮被点击');
+            e.preventDefault();
+            e.stopPropagation();
+            this.toggle();
+        });
 
         // 绑定清空按钮事件
         if (this.clearBtn) {
-            this.clearBtn.addEventListener('click', () => this.clear());
+            this.clearBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                this.clear();
+            });
         }
 
-        console.log('对话历史模块已初始化');
+        console.log('[ConversationHistory] 对话历史模块已初始化');
     }
 
     /**
      * 切换历史记录显示/隐藏
      */
     toggle() {
+        console.log('[ConversationHistory] toggle 被调用, 当前状态:', this.isVisible);
         this.isVisible = !this.isVisible;
 
         if (this.isVisible) {
@@ -73,9 +91,11 @@ class ConversationHistory {
             this.toggleBtn.classList.add('active');
             // 滚动到底部显示最新消息
             this.scrollToBottom();
+            console.log('[ConversationHistory] 显示历史记录');
         } else {
             this.contentBox.classList.remove('visible');
             this.toggleBtn.classList.remove('active');
+            console.log('[ConversationHistory] 隐藏历史记录');
         }
     }
 
