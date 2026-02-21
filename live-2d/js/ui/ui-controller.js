@@ -27,39 +27,9 @@ class UIController {
         const updateMouseIgnore = () => {
             if (!global.currentModel) return;
 
-            const mousePos = global.pixiApp.renderer.plugins.interaction.mouse.global;
-
-            // 🔥 检查鼠标是否在可交互元素上（聊天框、历史记录容器等）
-            const chatContainer = document.getElementById('text-chat-container');
-            const historyContainer = document.getElementById('history-container');
-
-            // 检查是否在聊天框区域
-            let isInInteractiveArea = false;
-            if (chatContainer) {
-                const chatRect = chatContainer.getBoundingClientRect();
-                isInInteractiveArea = isInInteractiveArea ||
-                    (mousePos.x >= chatRect.left && mousePos.x <= chatRect.right &&
-                     mousePos.y >= chatRect.top && mousePos.y <= chatRect.bottom);
-            }
-
-            // 检查是否在历史记录容器区域
-            if (historyContainer) {
-                const historyRect = historyContainer.getBoundingClientRect();
-                isInInteractiveArea = isInInteractiveArea ||
-                    (mousePos.x >= historyRect.left && mousePos.x <= historyRect.right &&
-                     mousePos.y >= historyRect.top && mousePos.y <= historyRect.bottom);
-            }
-
-            // 检查是否在 Live2D 模型上
-            const isInModel = global.currentModel.containsPoint(mousePos);
-
-            // 🔥 正确逻辑：
-            // - 在可交互区域内（聊天框/历史记录）-> 不穿透（ignore=false），无论是否在模型上
-            // - 不在可交互区域内：
-            //   - 在模型上 -> 穿透（ignore=true）
-            //   - 不在模型上 -> 不穿透（ignore=false）
-            const shouldIgnore = !isInInteractiveArea && isInModel;
-
+            const shouldIgnore = !global.currentModel.containsPoint(
+                global.pixiApp.renderer.plugins.interaction.mouse.global
+            );
             ipcRenderer.send('set-ignore-mouse-events', {
                 ignore: shouldIgnore,
                 options: { forward: true }
@@ -74,8 +44,24 @@ class UIController {
         const chatInput = document.getElementById('chat-input');
         const textChatContainer = document.getElementById('text-chat-container');
         const submitBtn = document.getElementById('chat-send-btn');
+        const historyContainer = document.getElementById('history-container');
 
         if (!chatInput || !textChatContainer || !submitBtn) return;
+
+        // 聊天框事件
+        textChatContainer.addEventListener('mouseenter', () => {
+            ipcRenderer.send('set-ignore-mouse-events', {
+                ignore: false,
+                options: { forward: false }
+            });
+        });
+
+        textChatContainer.addEventListener('mouseleave', () => {
+            ipcRenderer.send('set-ignore-mouse-events', {
+                ignore: true,
+                options: { forward: true }
+            });
+        });
 
         chatInput.addEventListener('focus', () => {
             ipcRenderer.send('set-ignore-mouse-events', {
@@ -85,9 +71,28 @@ class UIController {
         });
 
         chatInput.addEventListener('blur', () => {
-            // 输入框失焦时，恢复正常的鼠标穿透逻辑
-            // 不需要手动设置，mousemove 会处理
+            ipcRenderer.send('set-ignore-mouse-events', {
+                ignore: true,
+                options: { forward: true }
+            });
         });
+
+        // 🔥 历史记录容器事件（与聊天框同样的逻辑）
+        if (historyContainer) {
+            historyContainer.addEventListener('mouseenter', () => {
+                ipcRenderer.send('set-ignore-mouse-events', {
+                    ignore: false,
+                    options: { forward: false }
+                });
+            });
+
+            historyContainer.addEventListener('mouseleave', () => {
+                ipcRenderer.send('set-ignore-mouse-events', {
+                    ignore: true,
+                    options: { forward: true }
+                });
+            });
+        }
     }
 
     // 显示字幕
