@@ -44,7 +44,7 @@
   },
   "vision": {
     "enabled": true,
-    "auto_screenshot": true,
+    "auto_screenshot": false,
     "use_vision_model": true,
     "vision_model": {
       "api_key": "e9517ca3ded843c78f5d88453b70a8d9.PePrShYpVvVRxQfU",

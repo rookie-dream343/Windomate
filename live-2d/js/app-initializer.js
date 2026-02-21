@@ -11,6 +11,7 @@ const { AutoChatModule } = require('./live/auto-chat.js');
 const { MoodChatModule } = require('./ai/MoodChatModule.js');
 const { IPCHandlers } = require('./ipc-handlers.js');
 const { LLMHandler } = require('./ai/llm-handler.js');
+const { ConversationHistory } = require('./ui/ConversationHistory.js');
 const { logToTerminal } = require('./api-utils.js');
 
 class AppInitializer {
@@ -23,6 +24,7 @@ class AppInitializer {
         // 模块实例
         this.mcpManager = null;
         this.uiController = null;
+        this.conversationHistory = null;
         this.voiceChat = null;
         this.ttsProcessor = null;
         this.model = null;
@@ -153,6 +155,10 @@ class AppInitializer {
         this.uiController = new UIController(this.config);
         this.uiController.initialize();
 
+        // 初始化对话历史记录
+        console.log('📜 初始化对话历史记录...');
+        this.conversationHistory = new ConversationHistory(this.config);
+
         // 为EnhancedTextProcessor提供全局字幕函数
         global.showSubtitle = (text, duration) => this.uiController.showSubtitle(text, duration);
         global.hideSubtitle = () => this.uiController.hideSubtitle();
@@ -166,6 +172,9 @@ class AppInitializer {
         // 为歌词气泡提供全局函数
         global.showLyricsBubble = (text) => this.uiController.showLyricsBubble(text);
         global.hideLyricsBubble = () => this.uiController.hideLyricsBubble();
+
+        // 为对话历史提供全局函数
+        global.conversationHistory = this.conversationHistory;
     }
 
     // 第三阶段: 创建语音聊天接口
