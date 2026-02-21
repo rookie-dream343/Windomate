@@ -1,5 +1,14 @@
 <!DOCTYPE html>
 <html>
+
+<head>
+    <link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css">
+    <title>Live2D桌宠与语音聊天</title>
+</head>
+<!DOCTYPE html>
+<html>
+
 <head>
     <link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/styles.css">
@@ -33,17 +42,19 @@
     <!-- 工具调用气泡框堆叠容器 -->
     <div id="tool-bubbles-container"></div>
 
-    <!-- 对话历史记录面板 - 全新设计 -->
-    <div id="chat-history-panel">
-        <div class="chat-header">
-            <span class="chat-title">对话记录</span>
-            <button class="chat-close-btn" onclick="toggleChatHistory()">✕</button>
+    <!-- 对话历史记录容器 -->
+    <div id="history-container">
+        <div id="history-toggle-btn">
+            <span id="history-icon">💬</span>
         </div>
-        <div class="chat-messages-list" id="chat-history-list"></div>
+        <div id="history-content">
+            <div id="history-header">
+                <span id="history-title">对话记录</span>
+                <span id="history-clear-btn" title="清空记录">🗑️</span>
+            </div>
+            <div id="history-messages"></div>
+        </div>
     </div>
-
-    <!-- 对话历史切换按钮 -->
-    <button id="chat-history-toggle" onclick="toggleChatHistory()" title="显示对话记录">💬</button>
 
     <!-- 引入 Live2D 依赖 -->
     <script src="libs/live2d.min.js"></script>
@@ -53,75 +64,6 @@
     <script src="libs/pixi-live2d-display-extra.min.js"></script>
     <script src="app.js"></script>
 
-    <!-- 对话历史脚本 - 最简单的实现 -->
-    <script>
-        // 对话历史数据
-        window.chatHistory = [];
-        let isHistoryVisible = false;
-
-        // 切换显示/隐藏
-        function toggleChatHistory() {
-            const panel = document.getElementById('chat-history-panel');
-            const btn = document.getElementById('chat-history-toggle');
-
-            isHistoryVisible = !isHistoryVisible;
-
-            if (isHistoryVisible) {
-                panel.style.display = 'block';
-                btn.classList.add('active');
-            } else {
-                panel.style.display = 'none';
-                btn.classList.remove('active');
-            }
-        }
-
-        // 添加用户消息
-        function addUserMessage(text) {
-            addMessage('user', text);
-        }
-
-        // 添加AI消息
-        function addAIMessage(text) {
-            addMessage('ai', text);
-        }
-
-        // 添加消息到列表
-        function addMessage(type, text) {
-            window.chatHistory.push({ type, text, time: new Date() });
-
-            const list = document.getElementById('chat-history-list');
-            const item = document.createElement('div');
-            item.className = 'chat-history-item ' + type;
-
-            const time = new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
-
-            if (type === 'user') {
-                item.innerHTML = `<span class="chat-time">${time}</span><span class="chat-sender user">你:</span><span class="chat-text">${text}</span>`;
-            } else {
-                item.innerHTML = `<span class="chat-time">${time}</span><span class="chat-sender ai">AI:</span><span class="chat-text">${text}</span>`;
-            }
-
-            list.appendChild(item);
-            list.scrollTop = list.scrollHeight;
-        }
-
-        // 清空历史
-        function clearChatHistory() {
-            window.chatHistory = [];
-            document.getElementById('chat-history-list').innerHTML = '';
-        }
-
-        // 暴露全局函数供其他模块调用
-        window.toggleChatHistory = toggleChatHistory;
-        window.addUserMessage = addUserMessage;
-        window.addAIMessage = addAIMessage;
-        window.clearChatHistory = clearChatHistory;
-
-        // 默认隐藏面板
-        document.addEventListener('DOMContentLoaded', function() {
-            document.getElementById('chat-history-panel').style.display = 'none';
-        });
-    </script>
 
 </body>
 

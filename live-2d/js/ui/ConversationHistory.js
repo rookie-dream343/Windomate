@@ -31,8 +31,12 @@ class ConversationHistory {
      * 初始化历史记录模块
      */
     init() {
-        // 延迟执行，确保 DOM 已加载
-        setTimeout(() => this.setupDOM(), 100);
+        // 等待 DOM 加载完成
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => this.setupDOM());
+        } else {
+            this.setupDOM();
+        }
     }
 
     /**
