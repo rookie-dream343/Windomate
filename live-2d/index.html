@@ -35,7 +35,7 @@
 
     <!-- 对话历史记录容器 -->
     <div id="history-container">
-        <div id="history-toggle-btn">
+        <div id="history-toggle-btn" onclick="console.log('按钮被内联点击')">
             <span id="history-icon">💬</span>
         </div>
         <div id="history-content">
@@ -46,6 +46,30 @@
             <div id="history-messages"></div>
         </div>
     </div>
+
+    <!-- 调试脚本 -->
+    <script>
+        // 等待DOM加载完成后检查元素
+        window.addEventListener('DOMContentLoaded', function() {
+            console.log('[HTML Debug] DOM已加载');
+            console.log('[HTML Debug] history-container:', !!document.getElementById('history-container'));
+            console.log('[HTML Debug] history-toggle-btn:', !!document.getElementById('history-toggle-btn'));
+            console.log('[HTML Debug] history-content:', !!document.getElementById('history-content'));
+
+            // 直接绑定点击事件测试
+            const btn = document.getElementById('history-toggle-btn');
+            const content = document.getElementById('history-content');
+            if (btn && content) {
+                btn.addEventListener('click', function(e) {
+                    console.log('[Direct Click] 按钮被点击');
+                    e.preventDefault();
+                    e.stopPropagation();
+                    content.classList.toggle('visible');
+                    btn.classList.toggle('active');
+                });
+            }
+        });
+    </script>
 
     <!-- 引入 Live2D 依赖 -->
     <script src="libs/live2d.min.js"></script>
