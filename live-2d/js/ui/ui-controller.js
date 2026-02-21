@@ -74,7 +74,27 @@ class UIController {
                 options: { forward: true }
             });
         });
-        
+
+        // 🔥 为历史记录容器添加鼠标事件
+        const historyContainer = document.getElementById('history-container');
+        const historyToggleBtn = document.getElementById('history-toggle-btn');
+        const historyContent = document.getElementById('history-content');
+
+        if (historyContainer) {
+            historyContainer.addEventListener('mouseenter', () => {
+                ipcRenderer.send('set-ignore-mouse-events', {
+                    ignore: false,
+                    options: { forward: false }
+                });
+            });
+
+            historyContainer.addEventListener('mouseleave', () => {
+                ipcRenderer.send('set-ignore-mouse-events', {
+                    ignore: true,
+                    options: { forward: true }
+                });
+            });
+        }
     }
 
     // 显示字幕
