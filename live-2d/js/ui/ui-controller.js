@@ -27,9 +27,36 @@ class UIController {
         const updateMouseIgnore = () => {
             if (!global.currentModel) return;
 
-            const shouldIgnore = !global.currentModel.containsPoint(
-                global.pixiApp.renderer.plugins.interaction.mouse.global
-            );
+            // 🔥 检查鼠标是否在可交互元素上（聊天框、历史记录容器等）
+            const chatContainer = document.getElementById('text-chat-container');
+            const historyContainer = document.getElementById('history-container');
+            const chatInput = document.getElementById('chat-input');
+
+            const mousePos = global.pixiApp.renderer.plugins.interaction.mouse.global;
+
+            // 检查是否在聊天框区域
+            let isInInteractiveArea = false;
+            if (chatContainer) {
+                const chatRect = chatContainer.getBoundingClientRect();
+                isInInteractiveArea = isInInteractiveArea ||
+                    (mousePos.x >= chatRect.left && mousePos.x <= chatRect.right &&
+                     mousePos.y >= chatRect.top && mousePos.y <= chatRect.bottom);
+            }
+
+            // 检查是否在历史记录容器区域
+            if (historyContainer) {
+                const historyRect = historyContainer.getBoundingClientRect();
+                isInInteractiveArea = isInInteractiveArea ||
+                    (mousePos.x >= historyRect.left && mousePos.x <= historyRect.right &&
+                     mousePos.y >= historyRect.top && mousePos.y <= historyRect.bottom);
+            }
+
+            // 检查是否在 Live2D 模型上
+            const isInModel = global.currentModel.containsPoint(mousePos);
+
+            // 只有在模型上且不在可交互区域时才穿透
+            const shouldIgnore = isInModel && !isInInteractiveArea;
+
             ipcRenderer.send('set-ignore-mouse-events', {
                 ignore: shouldIgnore,
                 options: { forward: true }
@@ -74,27 +101,6 @@ class UIController {
                 options: { forward: true }
             });
         });
-
-        // 🔥 为历史记录容器添加鼠标事件
-        const historyContainer = document.getElementById('history-container');
-        const historyToggleBtn = document.getElementById('history-toggle-btn');
-        const historyContent = document.getElementById('history-content');
-
-        if (historyContainer) {
-            historyContainer.addEventListener('mouseenter', () => {
-                ipcRenderer.send('set-ignore-mouse-events', {
-                    ignore: false,
-                    options: { forward: false }
-                });
-            });
-
-            historyContainer.addEventListener('mouseleave', () => {
-                ipcRenderer.send('set-ignore-mouse-events', {
-                    ignore: true,
-                    options: { forward: true }
-                });
-            });
-        }
     }
 
     // 显示字幕
