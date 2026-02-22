@@ -146,47 +146,15 @@ class UIController {
         }
     }
 
-    // 显示字幕
+    // 显示字幕 - 已禁用，只保留对话历史面板
     showSubtitle(text, duration = null) {
-        // 检查字幕是否启用
-        if (this.config && this.config.subtitle_labels && this.config.subtitle_labels.enabled === false) {
-            return;
-        }
-
-        const container = document.getElementById('subtitle-container');
-        const subtitleText = document.getElementById('subtitle-text');
-
-        if (!container || !subtitleText) return;
-
-        // 清除之前的定时器
-        if (this.subtitleTimeout) {
-            clearTimeout(this.subtitleTimeout);
-            this.subtitleTimeout = null;
-        }
-
-        subtitleText.textContent = text;
-        container.style.display = 'block';
-        container.scrollTop = container.scrollHeight;
-
-        // 如果指定了持续时间，设置自动隐藏
-        if (duration) {
-            this.subtitleTimeout = setTimeout(() => {
-                this.hideSubtitle();
-            }, duration);
-        }
+        // 字幕功能已禁用，不再显示逐字浮现的文字
+        // 对话内容现在只显示在对话历史面板中
     }
 
-    // 隐藏字幕
+    // 隐藏字幕 - 已禁用
     hideSubtitle() {
-        const container = document.getElementById('subtitle-container');
-        if (container) {
-            container.style.display = 'none';
-        }
-
-        if (this.subtitleTimeout) {
-            clearTimeout(this.subtitleTimeout);
-            this.subtitleTimeout = null;
-        }
+        // 字幕功能已禁用
     }
 
     // 更新气泡框位置，使其跟随模型
