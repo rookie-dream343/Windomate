@@ -351,36 +351,65 @@ class ModelInteractionController {
 
     // 设置文件拖拽
     setupFileDrop() {
-        // 阻止默认拖拽行为
-        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-            document.body.addEventListener(eventName, (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-            }, false);
-        });
-
-        // 拖拽进入时的视觉反馈
+        // 🔥 拖拽进入时临时启用鼠标事件（关键！）
         document.addEventListener('dragenter', (e) => {
             if (this.isFileDrag(e)) {
+                console.log('📥 拖拽进入，启用鼠标事件');
+                ipcRenderer.send('set-ignore-mouse-events', {
+                    ignore: false,
+                    options: { forward: false }
+                });
                 this.showDragHighlight(true);
             }
         });
 
-        // 拖拽离开时移除视觉反馈
+        // 拖拽悬停时保持鼠标事件启用
+        document.addEventListener('dragover', (e) => {
+            if (this.isFileDrag(e)) {
+                e.preventDefault();
+                e.stopPropagation();
+                // 确保鼠标事件保持启用
+                ipcRenderer.send('set-ignore-mouse-events', {
+                    ignore: false,
+                    options: { forward: false }
+                });
+            }
+        });
+
+        // 拖拽离开时恢复
         document.addEventListener('dragleave', (e) => {
-            if (e.clientX === 0 && e.clientY === 0) {
+            if (this.isFileDrag(e)) {
+                console.log('📤 拖拽离开，恢复鼠标忽略');
+                ipcRenderer.send('set-ignore-mouse-events', {
+                    ignore: true,
+                    options: { forward: true }
+                });
                 this.showDragHighlight(false);
             }
         });
 
-        // 拖拽结束时移除视觉反馈
+        // 拖拽结束时恢复
         document.addEventListener('dragend', (e) => {
+            console.log('🏁 拖拽结束，恢复鼠标忽略');
+            ipcRenderer.send('set-ignore-mouse-events', {
+                ignore: true,
+                options: { forward: true }
+            });
             this.showDragHighlight(false);
         });
 
         // 拖拽释放时处理文件
         document.addEventListener('drop', (e) => {
+            console.log('⬇️ drop 事件触发');
             this.showDragHighlight(false);
+
+            // 立即恢复鼠标忽略
+            setTimeout(() => {
+                ipcRenderer.send('set-ignore-mouse-events', {
+                    ignore: true,
+                    options: { forward: true }
+                });
+            }, 100);
 
             // 调试信息显示到对话历史
             const debugMsg = (msg) => {
