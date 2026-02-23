@@ -382,18 +382,23 @@ class ModelInteractionController {
         document.addEventListener('drop', (e) => {
             this.showDragHighlight(false);
 
-            console.log('📁 drop 事件触发');
-            console.log('📁 e.dataTransfer:', !!e.dataTransfer);
-            console.log('📁 files:', e.dataTransfer?.files);
+            // 调试信息显示到对话历史
+            const debugMsg = (msg) => {
+                console.log(msg);
+                if (typeof window.addAIMessage === 'function') {
+                    window.addAIMessage(`[DEBUG] ${msg}`);
+                }
+            };
+
+            debugMsg('drop 事件触发');
 
             const files = e.dataTransfer?.files;
             if (!files || files.length === 0) {
-                console.log('📁 没有文件');
+                debugMsg('没有文件');
                 return;
             }
 
-            console.log('📁 文件数量:', files.length);
-            console.log('📁 第一个文件:', files[0].name, files[0].type);
+            debugMsg(`文件: ${files[0].name}, 类型: ${files[0].type}`);
 
             this.handleDroppedFiles(files);
         });
@@ -421,22 +426,39 @@ class ModelInteractionController {
     async handleDroppedFiles(files) {
         const file = files[0];  // 只处理第一个文件
 
+        const debugMsg = (msg) => {
+            console.log(msg);
+            if (typeof window.addAIMessage === 'function') {
+                window.addAIMessage(`[DEBUG] ${msg}`);
+            }
+        };
+
+        debugMsg(`开始处理文件: ${file.name}`);
+
         // 读取文件内容
         const reader = new FileReader();
 
         reader.onload = async (e) => {
+            debugMsg('文件读取完成');
             const content = e.target.result;
 
             if (this.isImageFile(file)) {
+                debugMsg('识别为图片文件');
                 // 图片文件 - 发送给AI点评
                 await this.handleImageDrop(file, content);
             } else if (this.isTextFile(file)) {
+                debugMsg('识别为文本文件');
                 // 文本文件 - 发送给AI总结
                 await this.handleTextDrop(file, content);
             } else {
+                debugMsg(`不支持的文件类型: ${file.type}`);
                 // 其他文件类型
                 this.showUnsupportedMessage(file);
             }
+        };
+
+        reader.onerror = () => {
+            debugMsg('文件读取失败!');
         };
 
         if (this.isImageFile(file)) {
