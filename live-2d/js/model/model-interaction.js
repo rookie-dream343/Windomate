@@ -464,36 +464,35 @@ class ModelInteractionController {
 
         debugMsg(`开始处理文件: ${file.name}`);
 
-        // 读取文件内容
-        const reader = new FileReader();
+        // 添加用户消息到对话历史
+        if (typeof window.addUserMessage === 'function') {
+            window.addUserMessage(`[发送文件: ${file.name}]`);
+        }
 
-        reader.onload = async (e) => {
-            debugMsg('文件读取完成');
-            const content = e.target.result;
-
-            if (this.isImageFile(file)) {
-                debugMsg('识别为图片文件');
-                // 图片文件 - 发送给AI点评
-                await this.handleImageDrop(file, content);
-            } else if (this.isTextFile(file)) {
-                debugMsg('识别为文本文件');
-                // 文本文件 - 发送给AI总结
-                await this.handleTextDrop(file, content);
-            } else {
-                debugMsg(`不支持的文件类型: ${file.type}`);
-                // 其他文件类型
-                this.showUnsupportedMessage(file);
-            }
-        };
-
-        reader.onerror = () => {
-            debugMsg('文件读取失败!');
-        };
-
+        // 判断文件类型
         if (this.isImageFile(file)) {
+            debugMsg('识别为图片文件');
+            // 图片文件 - 需要读取为 base64
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                await this.handleImageDrop(file, e.target.result);
+            };
             reader.readAsDataURL(file);
-        } else {
+        } else if (this.isDocumentFile(file)) {
+            debugMsg('识别为文档文件');
+            // 文档文件 - 无法直接读取内容，提示用户
+            await this.handleDocumentDrop(file);
+        } else if (this.isTextFile(file)) {
+            debugMsg('识别为文本文件');
+            // 文本文件 - 读取为文本
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                await this.handleTextDrop(file, e.target.result);
+            };
             reader.readAsText(file);
+        } else {
+            debugMsg(`不支持的文件类型: ${file.type}`);
+            this.showUnsupportedMessage(file);
         }
     }
 
@@ -514,7 +513,68 @@ class ModelInteractionController {
                file.name.endsWith('.js') ||
                file.name.endsWith('.py') ||
                file.name.endsWith('.css') ||
-               file.name.endsWith('.html');
+               file.name.endsWith('.html') ||
+               file.name.endsWith('.xml') ||
+               file.name.endsWith('.yaml') ||
+               file.name.endsWith('.yml');
+    }
+
+    // 判断是否是二进制文档文件（需要特殊处理）
+    isDocumentFile(file) {
+        // Excel 文件
+        const excelTypes = [
+            'application/vnd.ms-excel',
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'application/vnd.ms-excel.sheet.macroEnabled.12'
+        ];
+        // Word 文件
+        const wordTypes = [
+            'application/msword',
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            'application/vnd.ms-word.document.macroEnabled.12'
+        ];
+        // PPT 文件
+        const pptTypes = [
+            'application/vnd.ms-powerpoint',
+            'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+            'application/vnd.ms-powerpoint.presentation.macroEnabled.12'
+        ];
+        // PDF 文件
+        const pdfTypes = ['application/pdf'];
+
+        const allDocTypes = [...excelTypes, ...wordTypes, ...pptTypes, ...pdfTypes];
+
+        return allDocTypes.includes(file.type) ||
+               file.name.endsWith('.xls') ||
+               file.name.endsWith('.xlsx') ||
+               file.name.endsWith('.xlsm') ||
+               file.name.endsWith('.doc') ||
+               file.name.endsWith('.docx') ||
+               file.name.endsWith('.docm') ||
+               file.name.endsWith('.ppt') ||
+               file.name.endsWith('.pptx') ||
+               file.name.endsWith('.pptm') ||
+               file.name.endsWith('.pdf');
+    }
+
+    // 获取文档类型描述
+    getDocumentType(file) {
+        if (file.name.endsWith('.xls') || file.name.endsWith('.xlsx') || file.name.endsWith('.xlsm') ||
+            file.type.includes('spreadsheet') || file.type.includes('excel')) {
+            return 'Excel表格';
+        }
+        if (file.name.endsWith('.doc') || file.name.endsWith('.docx') || file.name.endsWith('.docm') ||
+            file.type.includes('wordprocessing') || file.type.includes('word')) {
+            return 'Word文档';
+        }
+        if (file.name.endsWith('.ppt') || file.name.endsWith('.pptx') || file.name.endsWith('.pptm') ||
+            file.type.includes('presentation') || file.type.includes('powerpoint')) {
+            return 'PPT演示文稿';
+        }
+        if (file.name.endsWith('.pdf') || file.type === 'application/pdf') {
+            return 'PDF文档';
+        }
+        return '文档';
     }
 
     // 处理图片拖放 - AI点评
@@ -622,7 +682,29 @@ class ModelInteractionController {
         console.log('不支持的文件类型:', file.type, file.name);
 
         if (typeof window.addAIMessage === 'function') {
-            window.addAIMessage(`（抱歉，我不支持处理 ${file.name} 这种类型的文件。目前支持图片和文本文件。）`);
+            window.addAIMessage(`（抱歉，我不支持处理 ${file.name} 这种类型的文件。目前支持图片、文本和常见文档格式。）`);
+        }
+    }
+
+    // 处理文档文件拖放 (Excel/Word/PPT/PDF等)
+    async handleDocumentDrop(file) {
+        const docType = this.getDocumentType(file);
+        console.log(`📃 检测到${docType}:`, file.name);
+
+        // 显示提示
+        if (typeof window.addAIMessage === 'function') {
+            window.addAIMessage(`（收到${docType} ${file.name}，但我无法直接读取其内容。请将文件内容复制后以文本形式发送给我，或者告诉我你想了解这个文件的什么方面？）`);
+        }
+
+        // 构建提示消息，让用户知道可以如何操作
+        const prompt = `用户发送了一个${docType}文件，文件名是"${file.name}"。由于无法直接读取${docType}的内容，请友好地告诉用户：1)你收到了这个文件；2)可以尝试将内容复制粘贴发送给你；3)或者用户想了解这个文件的什么方面。`;
+
+        try {
+            if (global.voiceChat && global.voiceChat.sendToLLM) {
+                await global.voiceChat.sendToLLM(prompt);
+            }
+        } catch (error) {
+            console.error(`📃 处理${docType}失败:`, error);
         }
     }
 
