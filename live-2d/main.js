@@ -67,8 +67,12 @@ function createWindow () {
     setInterval(() => {
         ensureTopMost(win)
     }, 1000)
-    
-    
+
+    // 添加开发者工具快捷键 Ctrl+Shift+D
+    globalShortcut.register('CommandOrControl+Shift+D', () => {
+        win.webContents.toggleDevTools();
+    });
+
     return win
 }
 
