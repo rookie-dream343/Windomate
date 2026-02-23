@@ -96,6 +96,8 @@ class LLMHandler {
                 let screenshotFilename = null;
 
                 // 🔥 优先检查是否有拖拽的图片（pendingScreenshot）
+                console.log('🔍 检查 pendingScreenshot:', !!voiceChat.pendingScreenshot, 'isFirstAttempt:', isFirstAttempt, 'hasRetriedWithoutImage:', hasRetriedWithoutImage);
+
                 if (isFirstAttempt && !hasRetriedWithoutImage && voiceChat.pendingScreenshot) {
                     screenshotBase64 = voiceChat.pendingScreenshot.base64;
                     screenshotFilename = voiceChat.pendingScreenshot.filename || '拖拽的图片';
@@ -118,6 +120,7 @@ class LLMHandler {
 
                     // 清除pendingScreenshot，避免重复使用
                     voiceChat.pendingScreenshot = null;
+                    console.log('📸 pendingScreenshot 已清除');
                 }
                 // 如果没有拖拽图片，检查是否需要截图
                 else if (isFirstAttempt && !hasRetriedWithoutImage) {

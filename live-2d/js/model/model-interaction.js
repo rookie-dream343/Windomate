@@ -464,10 +464,13 @@ class ModelInteractionController {
 
     // 处理图片拖放 - AI点评
     async handleImageDrop(file, base64Content) {
-        console.log('检测到图片文件:', file.name);
+        console.log('📸 检测到图片文件:', file.name);
+        console.log('📸 global.voiceChat 存在:', !!global.voiceChat);
+        console.log('📸 global.voiceChat.sendToLLM 存在:', !!(global.voiceChat && global.voiceChat.sendToLLM));
 
         // 提取base64数据（去掉data:image/xxx;base64,前缀）
         const base64Data = base64Content.split(',')[1];
+        console.log('📸 base64Data 长度:', base64Data ? base64Data.length : 0);
 
         // 构建消息
         const prompt = `这是我拖给你的图片，请点评一下这张图片。`;
@@ -485,30 +488,41 @@ class ModelInteractionController {
         try {
             // 调用 LLMHandler 的 sendToLLM，传入截图数据
             if (global.voiceChat && global.voiceChat.sendToLLM) {
+                console.log('📸 开始调用 sendToLLM...');
+
                 // 设置截图数据
                 global.voiceChat.pendingScreenshot = {
                     base64: base64Data,
                     filename: file.name
                 };
+                console.log('📸 pendingScreenshot 已设置');
 
                 // 发送给LLM处理
                 await global.voiceChat.sendToLLM(prompt);
+                console.log('📸 sendToLLM 调用完成');
 
                 // 清除截图数据
                 global.voiceChat.pendingScreenshot = null;
+            } else {
+                console.error('📸 global.voiceChat 或 sendToLLM 不存在!');
+                if (typeof window.addAIMessage === 'function') {
+                    window.addAIMessage('（系统未准备好，请稍后再试）');
+                }
             }
         } catch (error) {
-            console.error('处理图片失败:', error);
+            console.error('📸 处理图片失败:', error);
             if (typeof window.addAIMessage === 'function') {
-                window.addAIMessage('（抱歉，处理图片时出错了）');
+                window.addAIMessage(`（处理图片出错: ${error.message}）`);
             }
         }
     }
 
     // 处理文本文件拖放 - AI总结
     async handleTextDrop(file, textContent) {
-        console.log('检测到文本文件:', file.name);
-        console.log('文件内容长度:', textContent.length);
+        console.log('📄 检测到文本文件:', file.name);
+        console.log('📄 文件内容长度:', textContent.length);
+        console.log('📄 global.voiceChat 存在:', !!global.voiceChat);
+        console.log('📄 global.voiceChat.sendToLLM 存在:', !!(global.voiceChat && global.voiceChat.sendToLLM));
 
         // 添加用户消息到对话历史
         if (typeof window.addUserMessage === 'function') {
@@ -531,12 +545,19 @@ class ModelInteractionController {
 
         try {
             if (global.voiceChat && global.voiceChat.sendToLLM) {
+                console.log('📄 开始调用 sendToLLM...');
                 await global.voiceChat.sendToLLM(prompt);
+                console.log('📄 sendToLLM 调用完成');
+            } else {
+                console.error('📄 global.voiceChat 或 sendToLLM 不存在!');
+                if (typeof window.addAIMessage === 'function') {
+                    window.addAIMessage('（系统未准备好，请稍后再试）');
+                }
             }
         } catch (error) {
-            console.error('处理文本文件失败:', error);
+            console.error('📄 处理文本文件失败:', error);
             if (typeof window.addAIMessage === 'function') {
-                window.addAIMessage('（抱歉，处理文件时出错了）');
+                window.addAIMessage(`（处理文件出错: ${error.message}）`);
             }
         }
     }
