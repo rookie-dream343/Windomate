@@ -479,6 +479,11 @@ class UIController {
                 chatMessages.scrollTop = chatMessages.scrollHeight;
             }
 
+            // 添加到对话历史面板（与语音输入一致）
+            if (typeof window.addUserMessage === 'function') {
+                window.addUserMessage(message);
+            }
+
             voiceChat.sendToLLM(message);
             chatInput.textContent = '';
         };
