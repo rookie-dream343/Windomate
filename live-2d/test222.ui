@@ -727,6 +727,12 @@ QTabWidget#tabWidget_tools QTabBar {
        </item>
        <item>
         <widget class="QPushButton" name="pushButton_2">
+         <property name="maximumSize">
+          <size>
+           <width>0</width>
+           <height>0</height>
+          </size>
+         </property>
          <property name="sizePolicy">
           <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
            <horstretch>0</horstretch>
@@ -751,6 +757,12 @@ QTabWidget#tabWidget_tools QTabBar {
        </item>
        <item>
         <widget class="QPushButton" name="pushButton_voice_clone">
+         <property name="maximumSize">
+          <size>
+           <width>0</width>
+           <height>0</height>
+          </size>
+         </property>
          <property name="sizePolicy">
           <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
            <horstretch>0</horstretch>
@@ -823,6 +835,12 @@ QTabWidget#tabWidget_tools QTabBar {
        </item>
        <item>
         <widget class="QPushButton" name="pushButton_cloud_config">
+         <property name="maximumSize">
+          <size>
+           <width>0</width>
+           <height>0</height>
+          </size>
+         </property>
          <property name="sizePolicy">
           <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
            <horstretch>0</horstretch>
@@ -1535,6 +1553,12 @@ QTabWidget#tabWidget_tools QTabBar {
                  </item>
                  <item>
                   <widget class="QCheckBox" name="checkBox_persistent_history">
+                      <property name="maximumSize">
+                       <size>
+                        <width>0</width>
+                        <height>0</height>
+                       </size>
+                      </property>
                       <property name="sizePolicy">
                        <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
                         <horstretch>0</horstretch>

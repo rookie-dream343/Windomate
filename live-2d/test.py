@@ -560,6 +560,11 @@ class set_pyqt(QWidget):
         self.set_btu()
         self.set_config()
 
+        # 隐藏暂不使用的 tab
+        self.ui.tabWidget_conversation.removeTab(
+            self.ui.tabWidget_conversation.indexOf(self.ui.tab_translation)
+        )
+
         # 为API KEY输入框添加小眼睛图标
         self.setup_api_key_visibility_toggles()
 
