@@ -16,9 +16,6 @@
 
 #### If you want to use fully local inference, using local Large Language Models (LLM) for inference or fine-tuning, not based on third-party APIs, you can enter the LLM-studio folder, which contains guidance for local model inference and fine-tuning.
 
-### If you want to use closed-source AI models, we recommend using [DMXAPI](https://www.dmxapi.cn)
-### Supports unified calls to most mainstream AI models on the market.
-
 ## Roadmap
 
 ### Model Support
